@@ -1,92 +1,88 @@
-import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
+import SearchBar from '../components/SearchBar';
 import EmptyState from '../components/EmptyState';
 import { normalizeSearchText } from '../utils/formatters.js';
 
-export default function ServicesScreen() {
+export default function ServicesScreen({ navigation }) {
   const {
     coletaLixo,
-    buracos,
+    ocorrencias,
     agendamentos,
     enquetes,
     searchQuery,
     setSearchQuery,
-    navigate,
   } = useApp();
 
-  const openBuracosCount = buracos.filter((b) => b.status !== 'Resolvido').length;
+  const openIssuesCount = ocorrencias.filter((o) => o.status !== 'Resolvido').length;
   const activeAgendamentosCount = agendamentos.filter((a) => a.status === 'Confirmado').length;
   const activeEnquetesCount = enquetes.filter((e) => e.status === 'ativa').length;
 
-  const catalog = useMemo(
-    () => [
-      {
-        id: 'buracos',
-        route: 'buracos',
-        title: 'Curadoria de Buracos',
-        badge: `${openBuracosCount} em andamento`,
-        tag: 'Novo Módulo',
-        description:
-          'Denuncie buracos recorrentes em vias públicas, confirme ocorrências de outros moradores e acompanhe o status de reparo.',
-        bg: '#ffedd5',
-        color: '#c2410c',
-        family: 'mci',
-        icon: 'road-variant',
-      },
-      {
-        id: 'agendamento',
-        route: 'agendamento',
-        title: 'Agendamento Municipal',
-        badge: `${activeAgendamentosCount} agendamentos ativos`,
-        tag: 'Novo Módulo',
-        description:
-          'Agende atendimentos em Unidades Básicas de Saúde (UBS) ou emissão de documentos sem filas e gerencie suas reservas.',
-        bg: '#dbeafe',
-        color: '#1d4ed8',
-        family: 'ion',
-        icon: 'calendar-outline',
-      },
-      {
-        id: 'enquetes',
-        route: 'enquetes',
-        title: 'Enquetes e Consulta Popular',
-        badge: `${activeEnquetesCount} consultas abertas`,
-        tag: 'Novo Módulo',
-        description:
-          'Vote nas prioridades do seu bairro, acompanhe resultados em tempo real e envie opiniões sobre projetos da cidade.',
-        bg: '#ede9fe',
-        color: '#6d28d9',
-        family: 'ion',
-        icon: 'bar-chart-outline',
-      },
-      {
-        id: 'coletaLixo',
-        route: 'coletaLixo',
-        title: 'Coleta de Lixo e Seletiva',
-        badge: `${coletaLixo.length} bairros atendidos`,
-        tag: 'Utilidade Base',
-        description:
-          'Consulte os dias e horários da coleta comum, coleta seletiva e pontos de entrega voluntária no seu bairro.',
-        bg: '#dcfce7',
-        color: '#15803d',
-        family: 'mci',
-        icon: 'trash-can-outline',
-      },
-    ],
-    [openBuracosCount, activeAgendamentosCount, activeEnquetesCount, coletaLixo.length]
-  );
+  const catalog = [
+    {
+      id: 'radarUrbano',
+      route: 'RadarUrbano',
+      title: 'Radar Urbano',
+      badge: `${openIssuesCount} em aberto`,
+      tag: 'Módulo Cidadão',
+      description:
+        'Registre e apoie ocorrências de pavimentação, iluminação pública, poda de árvores, drenagem e limpeza urbana na cidade.',
+      bg: '#ffedd5',
+      color: '#c2410c',
+      family: 'mci',
+      icon: 'radar',
+    },
+    {
+      id: 'agendamento',
+      route: 'Appointment',
+      title: 'Agendamento Municipal',
+      badge: `${activeAgendamentosCount} agendamentos ativos`,
+      tag: 'Módulo Cidadão',
+      description:
+        'Agende atendimentos em Unidades Básicas de Saúde (UBS) ou emissão de documentos sem filas e gerencie suas reservas.',
+      bg: '#dbeafe',
+      color: '#1d4ed8',
+      family: 'ion',
+      icon: 'calendar-outline',
+    },
+    {
+      id: 'enquetes',
+      route: 'Polls',
+      title: 'Enquetes e Consulta Popular',
+      badge: `${activeEnquetesCount} consultas abertas`,
+      tag: 'Módulo Cidadão',
+      description:
+        'Vote nas prioridades do seu bairro, acompanhe resultados em tempo real e envie opiniões sobre projetos da cidade.',
+      bg: '#ede9fe',
+      color: '#6d28d9',
+      family: 'ion',
+      icon: 'bar-chart-outline',
+    },
+    {
+      id: 'coletaLixo',
+      route: 'TrashCollection',
+      title: 'Coleta de Lixo e Seletiva',
+      badge: `${coletaLixo.length} bairros atendidos`,
+      tag: 'Utilidade Base',
+      description:
+        'Consulte os dias e horários da coleta comum, coleta seletiva e pontos de entrega voluntária no seu bairro.',
+      bg: '#dcfce7',
+      color: '#15803d',
+      family: 'mci',
+      icon: 'trash-can-outline',
+    },
+  ];
 
   const normalizedQuery = normalizeSearchText(searchQuery);
-  const filteredCatalog = useMemo(() => {
-    if (!normalizedQuery) return catalog;
-    return catalog.filter((item) =>
-      normalizeSearchText(`${item.title} ${item.description} ${item.tag}`).includes(
-        normalizedQuery
+  const filteredCatalog = normalizedQuery
+    ? catalog.filter((item) =>
+        normalizeSearchText(`${item.title} ${item.description} ${item.tag}`).includes(
+          normalizedQuery
+        )
       )
-    );
-  }, [catalog, normalizedQuery]);
+    : catalog;
 
   return (
     <View style={styles.container}>
@@ -96,21 +92,11 @@ export default function ServicesScreen() {
           Acesse os módulos digitais da prefeitura em um só lugar
         </Text>
 
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={18} color="#9ca3af" style={styles.searchIcon} />
-          <TextInput
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Buscar serviço municipal..."
-            placeholderTextColor="#9ca3af"
-            style={styles.searchInput}
-          />
-          {searchQuery.length > 0 ? (
-            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearBtn}>
-              <Ionicons name="close-circle" size={18} color="#9ca3af" />
-            </TouchableOpacity>
-          ) : null}
-        </View>
+        <SearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Buscar serviço municipal..."
+        />
       </View>
 
       <ScrollView
@@ -130,7 +116,7 @@ export default function ServicesScreen() {
             <TouchableOpacity
               key={item.id}
               style={styles.card}
-              onPress={() => navigate(item.route)}
+              onPress={() => navigation.navigate(item.route)}
               activeOpacity={0.85}
             >
               <View style={styles.cardTop}>
@@ -187,29 +173,6 @@ const styles = StyleSheet.create({
     color: '#dbeafe',
     marginTop: 2,
     marginBottom: 12,
-  },
-  searchContainer: {
-    position: 'relative',
-    justifyContent: 'center',
-  },
-  searchIcon: {
-    position: 'absolute',
-    left: 12,
-    zIndex: 1,
-  },
-  searchInput: {
-    backgroundColor: '#ffffff',
-    height: 40,
-    borderRadius: 10,
-    paddingLeft: 38,
-    paddingRight: 36,
-    fontSize: 13,
-    color: '#1f2937',
-  },
-  clearBtn: {
-    position: 'absolute',
-    right: 10,
-    zIndex: 1,
   },
   scroll: {
     flex: 1,

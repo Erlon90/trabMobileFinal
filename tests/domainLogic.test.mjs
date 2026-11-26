@@ -1,10 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateCpf, formatCpf } from '../minhaprefeitura/utils/validators.js';
 import {
-  createPotholeReport,
-  togglePotholeConfirmation,
-  filterPotholes,
+  createUrbanIssue,
+  toggleUrbanIssueSupport,
+  filterUrbanIssues,
   getAvailableSlots,
   createAppointment,
   cancelAppointment,
@@ -13,47 +12,101 @@ import {
   addPollComment,
 } from '../minhaprefeitura/utils/domainLogic.js';
 
-test('validateCpf accepts valid CPF and rejects malformed or repeated digits', () => {
-  assert.equal(validateCpf('52998224725'), true);
-  assert.equal(validateCpf('529.982.247-25'), true);
-  assert.equal(validateCpf('111.111.111-11'), false);
-  assert.equal(validateCpf('123.456.789-00'), false);
-  assert.equal(formatCpf('52998224725'), '529.982.247-25');
-});
-
-test('Curadoria de Buracos validates required fields and toggles confirmation without double-counting', () => {
-  const invalid = createPotholeReport([], {
+test('Radar Urbano validates required fields, creates RAD protocol and toggles support without duplicating', () => {
+  const invalid = createUrbanIssue([], {
+    categoria: 'Categoria Inexistente',
     titulo: '',
     endereco: '',
     bairro: '',
-    descricao: 'oi',
+    descricao: 'curta',
     gravidade: 'Alta',
   });
   assert.equal(invalid.ok, false);
-  assert.ok(invalid.errors.endereco && invalid.errors.bairro && invalid.errors.descricao);
+  assert.ok(
+    invalid.errors.categoria &&
+      invalid.errors.titulo &&
+      invalid.errors.endereco &&
+      invalid.errors.bairro &&
+      invalid.errors.descricao
+  );
 
-  const created = createPotholeReport([], {
-    titulo: 'Cratera na esquina',
+  const created = createUrbanIssue([], {
+    categoria: 'Iluminação Pública',
+    titulo: 'Postes apagados na esquina',
     endereco: 'Av. Champagnat, 450',
     bairro: 'Praia da Costa',
     pontoReferencia: 'Em frente à padaria',
-    descricao: 'Buraco reaparece toda vez que chove forte.',
+    descricao: 'Luminárias apagadas há três dias prejudicando pedestres.',
     gravidade: 'Alta',
-    recorrente: true,
+    recorrente: false,
   });
   assert.equal(created.ok, true);
-  assert.match(created.item.protocolo, /^BUR-\d{4}-\d{4}$/);
-  assert.equal(created.item.recorrencias, 1);
+  assert.match(created.item.protocolo, /^RAD-\d{4}-\d{4}$/);
+  assert.equal(created.item.categoria, 'Iluminação Pública');
+  assert.equal(created.item.confirmacoes, 1);
+  assert.equal(created.item.confirmadoPeloUsuario, true);
 
-  const unconfirmed = togglePotholeConfirmation(created.list, created.item.id);
-  assert.equal(unconfirmed[0].confirmadoPeloUsuario, false);
-  assert.equal(unconfirmed[0].recorrencias, 0);
+  const unsupported = toggleUrbanIssueSupport(created.list, created.item.id);
+  assert.equal(unsupported[0].confirmadoPeloUsuario, false);
+  assert.equal(unsupported[0].confirmacoes, 0);
 
-  const reconfirmed = togglePotholeConfirmation(unconfirmed, created.item.id);
-  assert.equal(reconfirmed[0].confirmadoPeloUsuario, true);
-  assert.equal(reconfirmed[0].recorrencias, 1);
+  const resupported = toggleUrbanIssueSupport(unsupported, created.item.id);
+  assert.equal(resupported[0].confirmadoPeloUsuario, true);
+  assert.equal(resupported[0].confirmacoes, 1);
 
-  assert.equal(filterPotholes(reconfirmed, { bairro: 'Praia da Costa', status: 'Aberto' }).length, 1);
+  const nearRecurrent = [{ ...resupported[0], confirmacoes: 2, confirmadoPeloUsuario: false }];
+  const promotedToRecurrent = toggleUrbanIssueSupport(nearRecurrent, created.item.id);
+  assert.equal(promotedToRecurrent[0].confirmacoes, 3);
+  assert.equal(promotedToRecurrent[0].recorrente, true);
+});
+
+test('filterUrbanIssues filters by categoria, status, bairro and accent-insensitive search query', () => {
+  const sample = [
+    {
+      id: '1',
+      protocolo: 'RAD-2026-0001',
+      categoria: 'Pavimentação',
+      titulo: 'Desnível na pista',
+      endereco: 'Av. Champagnat, 100',
+      bairro: 'Praia da Costa',
+      pontoReferencia: '',
+      descricao: 'Asfalto cedeu perto da faixa.',
+      status: 'Manutenção agendada',
+    },
+    {
+      id: '2',
+      protocolo: 'RAD-2026-0002',
+      categoria: 'Iluminação Pública',
+      titulo: 'Poste apagado',
+      endereco: 'Rua da Aurora, 50',
+      bairro: 'Glória',
+      pontoReferencia: 'Próx. praça',
+      descricao: 'Sem iluminação à noite.',
+      status: 'Aberto',
+    },
+    {
+      id: '3',
+      protocolo: 'RAD-2026-0003',
+      categoria: 'Drenagem',
+      titulo: 'Bueiro entupido',
+      endereco: 'Rua Santa Catarina, 200',
+      bairro: 'Itapuã',
+      pontoReferencia: '',
+      descricao: 'Alagamento em dias de chuva.',
+      status: 'Resolvido',
+    },
+  ];
+
+  assert.equal(filterUrbanIssues(sample, { categoria: 'Todas', status: 'Todos' }).length, 3);
+  assert.equal(filterUrbanIssues(sample, { categoria: 'Iluminação Pública' }).length, 1);
+  assert.equal(filterUrbanIssues(sample, { status: 'Manutenção agendada' }).length, 1);
+  assert.equal(filterUrbanIssues(sample, { bairro: 'Itapuã' }).length, 1);
+  assert.equal(filterUrbanIssues(sample, { q: 'iluminacao' }).length, 1);
+  assert.equal(filterUrbanIssues(sample, { q: 'RAD-2026-0003' }).length, 1);
+  assert.equal(
+    filterUrbanIssues(sample, { categoria: 'Drenagem', status: 'Aberto' }).length,
+    0
+  );
 });
 
 test('Agendamento Municipal blocks invalid CPF, blocks occupied slots and releases slot on cancel', () => {

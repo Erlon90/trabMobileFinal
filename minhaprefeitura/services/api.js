@@ -2,7 +2,7 @@
  * Fachada de serviços simulando os endpoints REST da API oficial do projeto
  * ("https://news-api.uat.i9tasks.com.br/docs/") sobre a base mockada local.
  * Quando API_CONFIG.useMock for alterado para false em etapas futuras, as chamadas
- * podem ser direcionadas via fetch() mantendo exatamente o mesmo contrato { data, meta }.
+ * podem ser direcionadas a um cliente HTTP mantendo o mesmo contrato { data, meta }.
  */
 
 import {
@@ -10,7 +10,7 @@ import {
   MOCK_NOTICIAS,
   MOCK_NOTIFICACOES,
   MOCK_COLETA_LIXO,
-  MOCK_BURACOS,
+  MOCK_OCORRENCIAS,
   MOCK_AGENDAMENTO_CATALOGO,
   MOCK_AGENDAMENTOS,
   MOCK_ENQUETES,
@@ -115,13 +115,13 @@ export async function fetchNotificacoes() {
 }
 
 /**
- * Carrega a base inicial dos serviços utilitários e dos 3 novos módulos do aplicativo.
- * @returns {Promise<{ coletaLixo: Array, buracos: Array, catalogoAgendamento: Object, agendamentos: Array, enquetes: Array }>}
+ * Carrega a base inicial dos serviços utilitários e dos 3 módulos participativos do aplicativo.
+ * @returns {Promise<{ coletaLixo: Array, ocorrencias: Array, catalogoAgendamento: Object, agendamentos: Array, enquetes: Array }>}
  */
 export async function fetchInitialModulesData() {
   return {
     coletaLixo: cloneData(MOCK_COLETA_LIXO),
-    buracos: cloneData(MOCK_BURACOS),
+    ocorrencias: cloneData(MOCK_OCORRENCIAS),
     catalogoAgendamento: cloneData(MOCK_AGENDAMENTO_CATALOGO),
     agendamentos: cloneData(MOCK_AGENDAMENTOS),
     enquetes: cloneData(MOCK_ENQUETES),

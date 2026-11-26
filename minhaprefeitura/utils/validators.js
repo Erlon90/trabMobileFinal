@@ -1,6 +1,8 @@
 /**
- * Validadores puros para CPF e formulários dos novos módulos.
+ * Validadores puros para CPF e formulários dos módulos do aplicativo.
  */
+
+import { RADAR_CATEGORIES } from '../data/mockData.js';
 
 const VALID_SEVERITIES = ['Baixa', 'Média', 'Alta'];
 
@@ -62,29 +64,33 @@ export function validateCpf(cpf) {
 }
 
 /**
- * Valida o formulário de denúncia de buraco recorrente.
- * @param {{ titulo?: string, endereco?: string, bairro?: string, descricao?: string, gravidade?: string }} input
+ * Valida o formulário de registro de ocorrência no Radar Urbano.
+ * @param {{ categoria?: string, titulo?: string, endereco?: string, bairro?: string, descricao?: string, gravidade?: string }} input
  * @returns {{ valid: boolean, errors: Record<string, string> }}
  */
-export function validatePotholeReport(input = {}) {
+export function validateUrbanIssue(input = {}) {
   const errors = {};
+  const categoria = String(input.categoria || '').trim();
   const titulo = String(input.titulo || '').trim();
   const endereco = String(input.endereco || '').trim();
   const bairro = String(input.bairro || '').trim();
   const descricao = String(input.descricao || '').trim();
   const gravidade = String(input.gravidade || '').trim();
 
+  if (!RADAR_CATEGORIES.includes(categoria)) {
+    errors.categoria = 'Selecione uma categoria válida para a ocorrência.';
+  }
   if (titulo.length < 3) {
     errors.titulo = 'Informe um título resumido com pelo menos 3 caracteres.';
   }
   if (endereco.length < 5) {
-    errors.endereco = 'Informe a rua/avenida e número aproximado.';
+    errors.endereco = 'Informe a rua/avenida e número aproximado da ocorrência.';
   }
   if (bairro.length < 2) {
-    errors.bairro = 'Informe o bairro onde está o buraco.';
+    errors.bairro = 'Informe o bairro onde está localizada a ocorrência.';
   }
   if (descricao.length < 10) {
-    errors.descricao = 'Descreva o problema com pelo menos 10 caracteres.';
+    errors.descricao = 'Descreva a ocorrência com pelo menos 10 caracteres.';
   }
   if (!VALID_SEVERITIES.includes(gravidade)) {
     errors.gravidade = 'Selecione uma gravidade válida (Baixa, Média ou Alta).';

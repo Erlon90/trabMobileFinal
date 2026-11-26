@@ -1,7 +1,7 @@
 /**
  * Dados mockados estruturados para o aplicativo "Minha Prefeitura".
  * Espelha o contrato da API REST oficial (https://news-api.uat.i9tasks.com.br/docs/)
- * e fornece a base inicial dos módulos utilitários e dos 3 novos módulos do projeto.
+ * e fornece a base inicial dos módulos utilitários e dos 3 módulos participativos do projeto.
  */
 
 export const MOCK_TENANT = {
@@ -11,6 +11,14 @@ export const MOCK_TENANT = {
   codigo_ibge: '3205200',
   ativo: 1,
 };
+
+export const RADAR_CATEGORIES = [
+  'Pavimentação',
+  'Iluminação Pública',
+  'Poda e Árvores',
+  'Drenagem',
+  'Limpeza Urbana',
+];
 
 export const MOCK_NOTICIAS = [
   {
@@ -33,13 +41,13 @@ export const MOCK_NOTICIAS = [
     titulo: 'Manutenção e recapeamento asfáltico avançam em novas vias',
     slug: 'manutencao-e-recapeamento-asfaltico-avancam-em-novas-vias',
     resumo:
-      'Equipes da Secretaria de Obras concluíram mais 4 km de recuperação viária e priorizam pontos sinalizados por moradores na Curadoria de Buracos.',
+      'Equipes da Secretaria de Obras concluíram mais 4 km de recuperação viária e priorizam pontos sinalizados por moradores no Radar Urbano.',
     categoria: 'Obras',
     imagem_capa_url:
       'https://images.unsplash.com/photo-1573164713988-8665fc963095?auto=format&fit=crop&w=800&q=80',
     publicado_em: '2026-11-26T07:30:00Z',
     conteudo:
-      '<p>O programa de recuperação asfáltica avançou nesta semana para corredores estratégicos nos bairros Centro, Praia da Costa e Glória.</p><p>Além da aplicação de nova capa asfáltica em trechos com desgaste histórico, a equipe técnica incorporou as ocorrências com maior índice de confirmação no módulo Curadoria de Buracos.</p><p>Durante os trabalhos, trechos pontuais operam em sistema pare-e-siga com sinalização reforçada.</p>',
+      '<p>O programa de recuperação asfáltica avançou nesta semana para corredores estratégicos nos bairros Centro, Praia da Costa e Glória.</p><p>Além da aplicação de nova capa asfáltica em trechos com desgaste histórico, a equipe técnica incorporou as ocorrências com maior índice de apoio no módulo Radar Urbano.</p><p>Durante os trabalhos, trechos pontuais operam em sistema pare-e-siga com sinalização reforçada.</p>',
     status: 'publicado',
     tenant_id: 1,
   },
@@ -109,9 +117,9 @@ export const MOCK_NOTIFICACOES = [
     id: 1,
     titulo: 'AVISO DE UTILIDADE PÚBLICA',
     mensagem:
-      'Interdição parcial na Av. Champagnat (entre ruas 15 e 18) hoje até as 17h para recapeamento preventivo.',
+      'Interdição parcial na Av. Champagnat (entre ruas 15 e 18) hoje até as 17h para manutenção viária preventiva.',
     tipo: 'alerta',
-    link_acao: 'buracos',
+    link_acao: 'RadarUrbano',
     enviado_em: '2026-11-26T09:00:00Z',
     expira_em: '2026-11-27T23:59:59Z',
   },
@@ -131,7 +139,7 @@ export const MOCK_NOTIFICACOES = [
     mensagem:
       'Agende sua dose contra gripe e atualização vacinal nas UBS pelo módulo de Agendamento Municipal.',
     tipo: 'campanha',
-    link_acao: 'agendamento',
+    link_acao: 'Appointment',
     enviado_em: '2026-11-25T14:00:00Z',
     expira_em: '2026-12-15T23:59:59Z',
   },
@@ -141,7 +149,7 @@ export const MOCK_NOTIFICACOES = [
     mensagem:
       'Participe das enquetes ativas e ajude a definir as prioridades de investimento do seu bairro.',
     tipo: 'utilidade_publica',
-    link_acao: 'enquetes',
+    link_acao: 'Polls',
     enviado_em: '2026-11-24T10:00:00Z',
     expira_em: '2026-12-20T23:59:59Z',
   },
@@ -190,83 +198,105 @@ export const MOCK_COLETA_LIXO = [
   },
 ];
 
-export const MOCK_BURACOS = [
+export const MOCK_OCORRENCIAS = [
   {
-    id: 'bur-1',
-    protocolo: 'BUR-2026-0001',
-    titulo: 'Cratera próxima ao cruzamento da faixa de pedestres',
+    id: 'rad-1',
+    protocolo: 'RAD-2026-0001',
+    categoria: 'Pavimentação',
+    titulo: 'Desgaste profundo próximo à faixa de pedestres',
     endereco: 'Av. Champagnat, 890',
     bairro: 'Praia da Costa',
     pontoReferencia: 'Em frente à farmácia da esquina',
     descricao:
-      'Buraco profundo na faixa da direita. Já passou por tapa-buraco duas vezes este ano e voltou a ceder com as chuvas.',
+      'Buraco fundo na faixa da direita que já recebeu reparo paliativo este ano e voltou a ceder após as chuvas.',
     gravidade: 'Alta',
-    status: 'Recapeamento agendado',
-    recorrencias: 14,
+    status: 'Manutenção agendada',
+    confirmacoes: 14,
     recorrente: true,
     criadoEm: '2026-11-20T14:15:00Z',
     confirmadoPeloUsuario: false,
   },
   {
-    id: 'bur-2',
-    protocolo: 'BUR-2026-0002',
-    titulo: 'Afundamento no corredor de ônibus',
+    id: 'rad-2',
+    protocolo: 'RAD-2026-0002',
+    categoria: 'Iluminação Pública',
+    titulo: 'Sequência de postes apagados em corredor comercial',
     endereco: 'Av. Jerônimo Monteiro, 412',
     bairro: 'Centro',
     pontoReferencia: 'Ponto de ônibus próximo ao terminal antigo',
     descricao:
-      'Asfalto ondulado e com duas fissuras abertas que acumulam água e causam risco para motociclistas.',
+      'Três luminárias sem funcionamento durante a noite, comprometendo a visibilidade e a segurança de pedestres.',
     gravidade: 'Alta',
     status: 'Em análise',
-    recorrencias: 9,
+    confirmacoes: 9,
     recorrente: true,
     criadoEm: '2026-11-22T09:40:00Z',
     confirmadoPeloUsuario: false,
   },
   {
-    id: 'bur-3',
-    protocolo: 'BUR-2026-0003',
-    titulo: 'Desnível ao redor de tampa de bueiro',
+    id: 'rad-3',
+    protocolo: 'RAD-2026-0003',
+    categoria: 'Drenagem',
+    titulo: 'Bueiro obstruído causando acúmulo de água na via',
     endereco: 'Rua Santa Catarina, 155',
     bairro: 'Itapuã',
     pontoReferencia: 'Ao lado da escola estadual',
     descricao:
-      'Asfalto cedeu cerca de 10 cm em torno da grelha de drenagem, gerando barulho intenso na passagem de veículos.',
+      'Boca de lobo bloqueada por folhas e sedimentos, provocando alagamento da calçada em dias de chuva.',
     gravidade: 'Média',
     status: 'Aberto',
-    recorrencias: 4,
+    confirmacoes: 5,
     recorrente: true,
     criadoEm: '2026-11-24T16:10:00Z',
     confirmadoPeloUsuario: false,
   },
   {
-    id: 'bur-4',
-    protocolo: 'BUR-2026-0004',
-    titulo: 'Desgaste superficial em retorno de rua comercial',
+    id: 'rad-4',
+    protocolo: 'RAD-2026-0004',
+    categoria: 'Poda e Árvores',
+    titulo: 'Árvore com galhos inclinados e risco de queda',
     endereco: 'Rua da Aurora, 78',
     bairro: 'Glória',
     pontoReferencia: 'Esquina com a Rua Dom Pedro II',
     descricao:
-      'Conjunto de pequenos buracos espalhados por 3 metros na conversão à direita.',
+      'Galhos secos de grande porte avançando sobre a fiação e encobrindo a sinalização de parada obrigatória.',
+    gravidade: 'Alta',
+    status: 'Aberto',
+    confirmacoes: 4,
+    recorrente: false,
+    criadoEm: '2026-11-25T08:50:00Z',
+    confirmadoPeloUsuario: false,
+  },
+  {
+    id: 'rad-5',
+    protocolo: 'RAD-2026-0005',
+    categoria: 'Limpeza Urbana',
+    titulo: 'Descarte irregular de entulho sobre o passeio público',
+    endereco: 'Rua Henrique Laranja, 310',
+    bairro: 'Centro',
+    pontoReferencia: 'A 50 metros da praça central',
+    descricao:
+      'Restos de obra e madeira abandonados obstruindo metade da calçada e dificultando a passagem de cadeirantes.',
     gravidade: 'Baixa',
     status: 'Aberto',
-    recorrencias: 2,
+    confirmacoes: 2,
     recorrente: false,
     criadoEm: '2026-11-25T11:05:00Z',
     confirmadoPeloUsuario: false,
   },
   {
-    id: 'bur-5',
-    protocolo: 'BUR-2026-0005',
-    titulo: 'Buraco próximo à rotatória da praça',
+    id: 'rad-6',
+    protocolo: 'RAD-2026-0006',
+    categoria: 'Pavimentação',
+    titulo: 'Recomposição asfáltica na rotatória da praça',
     endereco: 'Av. Santa Leopoldina, 610',
     bairro: 'Coqueiral de Itaparica',
     pontoReferencia: 'Saída norte da praça principal',
     descricao:
-      'Recomposição asfáltica concluída com corte quadrado e selagem de borda após 7 confirmações de moradores.',
+      'Manutenção concluída com corte regular e selagem asfáltica após 7 confirmações registradas por moradores.',
     gravidade: 'Média',
     status: 'Resolvido',
-    recorrencias: 7,
+    confirmacoes: 7,
     recorrente: true,
     criadoEm: '2026-11-15T13:30:00Z',
     confirmadoPeloUsuario: false,

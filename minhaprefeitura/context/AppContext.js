@@ -1,13 +1,4 @@
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useReducer,
-  useState,
-} from 'react';
-import { BackHandler } from 'react-native';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import {
   fetchInitialModulesData,
   fetchNoticias,
@@ -19,10 +10,9 @@ import {
   cancelAppointment,
   castPollVote,
   createAppointment,
-  createPotholeReport,
-  togglePotholeConfirmation,
+  createUrbanIssue,
+  toggleUrbanIssueSupport,
 } from '../utils/domainLogic.js';
-import { INITIAL_NAV_STATE, navReducer } from '../utils/navigationReducer.js';
 
 const AppContext = createContext(null);
 
@@ -33,14 +23,13 @@ export function AppProvider({ children }) {
   const [noticias, setNoticias] = useState([]);
   const [notificacoes, setNotificacoes] = useState([]);
   const [coletaLixo, setColetaLixo] = useState([]);
-  const [buracos, setBuracos] = useState([]);
+  const [ocorrencias, setOcorrencias] = useState([]);
   const [catalogoAgendamento, setCatalogoAgendamento] = useState(null);
   const [agendamentos, setAgendamentos] = useState([]);
   const [enquetes, setEnquetes] = useState([]);
   const [votedPollIds, setVotedPollIds] = useState({});
-  const [reportedPotholeIds, setReportedPotholeIds] = useState([]);
-
-  const [navState, dispatch] = useReducer(navReducer, INITIAL_NAV_STATE);
+  const [reportedIssueIds, setReportedIssueIds] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -61,7 +50,7 @@ export function AppProvider({ children }) {
         setNoticias(noticiasRes.data);
         setNotificacoes(notificacoesRes.data);
         setColetaLixo(modulesRes.coletaLixo);
-        setBuracos(modulesRes.buracos);
+        setOcorrencias(modulesRes.ocorrencias);
         setCatalogoAgendamento(modulesRes.catalogoAgendamento);
         setAgendamentos(modulesRes.agendamentos);
         setEnquetes(modulesRes.enquetes);
@@ -83,151 +72,70 @@ export function AppProvider({ children }) {
     };
   }, []);
 
-  useEffect(() => {
-    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (navState.stack.length > 0) {
-        dispatch({ type: 'GO_BACK' });
-        return true;
-      }
-      return false;
-    });
+  function addUrbanIssue(input) {
+    const result = createUrbanIssue(ocorrencias, input);
+    if (result.ok) {
+      setOcorrencias(result.list);
+      setReportedIssueIds((prev) => [result.item.id, ...prev]);
+    }
+    return result;
+  }
 
-    return () => {
-      if (subscription && typeof subscription.remove === 'function') {
-        subscription.remove();
-      }
-    };
-  }, [navState.stack.length]);
+  function toggleSupportUrbanIssue(issueId) {
+    setOcorrencias((prev) => toggleUrbanIssueSupport(prev, issueId));
+  }
 
-  const switchTab = useCallback((tab) => {
-    dispatch({ type: 'SWITCH_TAB', tab });
-  }, []);
+  function bookAppointment(input, meta) {
+    const result = createAppointment(agendamentos, input, meta);
+    if (result.ok) {
+      setAgendamentos(result.list);
+    }
+    return result;
+  }
 
-  const navigate = useCallback((name, params = {}) => {
-    dispatch({ type: 'PUSH_ROUTE', name, params });
-  }, []);
-
-  const goBack = useCallback(() => {
-    dispatch({ type: 'GO_BACK' });
-  }, []);
-
-  const setSearchQuery = useCallback((query) => {
-    dispatch({ type: 'SET_SEARCH_QUERY', query });
-  }, []);
-
-  const addPothole = useCallback(
-    (input) => {
-      const result = createPotholeReport(buracos, input);
-      if (result.ok) {
-        setBuracos(result.list);
-        setReportedPotholeIds((prev) => [result.item.id, ...prev]);
-      }
-      return result;
-    },
-    [buracos]
-  );
-
-  const toggleConfirmPothole = useCallback((potholeId) => {
-    setBuracos((prev) => togglePotholeConfirmation(prev, potholeId));
-  }, []);
-
-  const bookAppointment = useCallback(
-    (input, meta) => {
-      const result = createAppointment(agendamentos, input, meta);
-      if (result.ok) {
-        setAgendamentos(result.list);
-      }
-      return result;
-    },
-    [agendamentos]
-  );
-
-  const cancelUserAppointment = useCallback((appointmentId) => {
+  function cancelUserAppointment(appointmentId) {
     setAgendamentos((prev) => cancelAppointment(prev, appointmentId));
-  }, []);
+  }
 
-  const voteInPoll = useCallback(
-    (pollId, optionId) => {
-      const result = castPollVote(enquetes, pollId, optionId, votedPollIds);
-      if (result.ok) {
-        setEnquetes(result.polls);
-        setVotedPollIds(result.votedPollIds);
-      }
-      return result;
-    },
-    [enquetes, votedPollIds]
-  );
+  function voteInPoll(pollId, optionId) {
+    const result = castPollVote(enquetes, pollId, optionId, votedPollIds);
+    if (result.ok) {
+      setEnquetes(result.polls);
+      setVotedPollIds(result.votedPollIds);
+    }
+    return result;
+  }
 
-  const commentOnPoll = useCallback(
-    (pollId, input) => {
-      const result = addPollComment(enquetes, pollId, input);
-      if (result.ok) {
-        setEnquetes(result.polls);
-      }
-      return result;
-    },
-    [enquetes]
-  );
+  function commentOnPoll(pollId, input) {
+    const result = addPollComment(enquetes, pollId, input);
+    if (result.ok) {
+      setEnquetes(result.polls);
+    }
+    return result;
+  }
 
-  const currentRoute =
-    navState.stack.length > 0 ? navState.stack[navState.stack.length - 1] : null;
-
-  const value = useMemo(
-    () => ({
-      loading,
-      error,
-      tenant,
-      noticias,
-      notificacoes,
-      coletaLixo,
-      buracos,
-      catalogoAgendamento,
-      agendamentos,
-      enquetes,
-      votedPollIds,
-      reportedPotholeIds,
-      navState,
-      activeTab: navState.activeTab,
-      currentRoute,
-      searchQuery: navState.searchQuery,
-      setSearchQuery,
-      switchTab,
-      navigate,
-      goBack,
-      addPothole,
-      toggleConfirmPothole,
-      bookAppointment,
-      cancelUserAppointment,
-      voteInPoll,
-      commentOnPoll,
-    }),
-    [
-      loading,
-      error,
-      tenant,
-      noticias,
-      notificacoes,
-      coletaLixo,
-      buracos,
-      catalogoAgendamento,
-      agendamentos,
-      enquetes,
-      votedPollIds,
-      reportedPotholeIds,
-      navState,
-      currentRoute,
-      setSearchQuery,
-      switchTab,
-      navigate,
-      goBack,
-      addPothole,
-      toggleConfirmPothole,
-      bookAppointment,
-      cancelUserAppointment,
-      voteInPoll,
-      commentOnPoll,
-    ]
-  );
+  const value = {
+    loading,
+    error,
+    tenant,
+    noticias,
+    notificacoes,
+    coletaLixo,
+    ocorrencias,
+    catalogoAgendamento,
+    agendamentos,
+    enquetes,
+    votedPollIds,
+    reportedIssueIds,
+    searchQuery,
+    setSearchQuery,
+    addUrbanIssue,
+    toggleSupportUrbanIssue,
+    bookAppointment,
+    cancelUserAppointment,
+    voteInPoll,
+    commentOnPoll,
+  };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

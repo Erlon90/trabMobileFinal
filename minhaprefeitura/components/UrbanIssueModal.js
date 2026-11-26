@@ -10,20 +10,22 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { RADAR_CATEGORIES } from '../data/mockData.js';
 
 const SEVERITIES = ['Baixa', 'Média', 'Alta'];
 
 const INITIAL_FORM = {
+  categoria: '',
   titulo: '',
   endereco: '',
   bairro: '',
   pontoReferencia: '',
   gravidade: 'Média',
-  recorrente: true,
+  recorrente: false,
   descricao: '',
 };
 
-export default function PotholeReportModal({ visible, onClose, onSubmit, onSuccess }) {
+export default function UrbanIssueModal({ visible, onClose, onSubmit, onSuccess }) {
   const [form, setForm] = useState(INITIAL_FORM);
   const [errors, setErrors] = useState({});
 
@@ -55,18 +57,48 @@ export default function PotholeReportModal({ visible, onClose, onSubmit, onSucce
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
           <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle}>Nova Denúncia de Buraco</Text>
+            <Text style={styles.sheetTitle}>Nova Ocorrência — Radar Urbano</Text>
             <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
               <Ionicons name="close" size={22} color="#4b5563" />
             </TouchableOpacity>
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.formBody}>
+            <Text style={styles.label}>Categoria da ocorrência *</Text>
+            <View
+              style={[
+                styles.categoriesWrap,
+                errors.categoria && styles.categoriesWrapError,
+              ]}
+            >
+              {RADAR_CATEGORIES.map((cat) => {
+                const active = form.categoria === cat;
+                return (
+                  <TouchableOpacity
+                    key={cat}
+                    style={[styles.categoryChip, active && styles.categoryChipActive]}
+                    onPress={() => updateField('categoria', cat)}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        styles.categoryChipText,
+                        active && styles.categoryChipTextActive,
+                      ]}
+                    >
+                      {cat}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            {errors.categoria ? <Text style={styles.errorText}>{errors.categoria}</Text> : null}
+
             <Text style={styles.label}>Título resumido *</Text>
             <TextInput
               value={form.titulo}
               onChangeText={(text) => updateField('titulo', text)}
-              placeholder="Ex: Buraco fundo na faixa direita"
+              placeholder="Ex: Poste apagado próximo à faixa de pedestres"
               placeholderTextColor="#9ca3af"
               style={[styles.input, errors.titulo && styles.inputError]}
             />
@@ -96,7 +128,7 @@ export default function PotholeReportModal({ visible, onClose, onSubmit, onSucce
             <TextInput
               value={form.pontoReferencia}
               onChangeText={(text) => updateField('pontoReferencia', text)}
-              placeholder="Ex: Em frente à padaria"
+              placeholder="Ex: Em frente à praça principal"
               placeholderTextColor="#9ca3af"
               style={styles.input}
             />
@@ -122,9 +154,9 @@ export default function PotholeReportModal({ visible, onClose, onSubmit, onSucce
 
             <View style={styles.switchRow}>
               <View style={styles.switchInfo}>
-                <Text style={styles.switchTitle}>Buraco recorrente</Text>
+                <Text style={styles.switchTitle}>Problema recorrente</Text>
                 <Text style={styles.switchSubtitle}>
-                  Já foi tapado anteriormente e voltou a abrir
+                  Já ocorreu ou foi consertado antes e voltou a aparecer
                 </Text>
               </View>
               <Switch
@@ -135,11 +167,11 @@ export default function PotholeReportModal({ visible, onClose, onSubmit, onSucce
               />
             </View>
 
-            <Text style={styles.label}>Descrição do problema *</Text>
+            <Text style={styles.label}>Descrição da ocorrência *</Text>
             <TextInput
               value={form.descricao}
               onChangeText={(text) => updateField('descricao', text)}
-              placeholder="Descreva o tamanho, risco ao trânsito e se acumula água..."
+              placeholder="Descreva os detalhes da ocorrência, impactos no local e possíveis riscos..."
               placeholderTextColor="#9ca3af"
               multiline
               numberOfLines={4}
@@ -152,7 +184,7 @@ export default function PotholeReportModal({ visible, onClose, onSubmit, onSucce
                 <Text style={styles.cancelBtnText}>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.submitBtn} onPress={handleSave}>
-                <Text style={styles.submitBtnText}>Registrar Denúncia</Text>
+                <Text style={styles.submitBtnText}>Registrar Ocorrência</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -185,9 +217,11 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e5e7eb',
   },
   sheetTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#111827',
+    flex: 1,
+    marginRight: 8,
   },
   closeBtn: {
     padding: 4,
@@ -202,6 +236,39 @@ const styles = StyleSheet.create({
     color: '#374151',
     marginTop: 12,
     marginBottom: 6,
+  },
+  categoriesWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    padding: 4,
+    borderRadius: 10,
+  },
+  categoriesWrapError: {
+    backgroundColor: '#fef2f2',
+    borderWidth: 1,
+    borderColor: '#fecaca',
+    padding: 8,
+  },
+  categoryChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    backgroundColor: '#ffffff',
+  },
+  categoryChipActive: {
+    backgroundColor: '#1d4ed8',
+    borderColor: '#1d4ed8',
+  },
+  categoryChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  categoryChipTextActive: {
+    color: '#ffffff',
   },
   input: {
     backgroundColor: '#f9fafb',

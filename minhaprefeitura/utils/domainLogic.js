@@ -1,6 +1,6 @@
 /**
- * Regras de negócio puras e imutáveis para os 3 novos módulos:
- * 1. Curadoria de Buracos
+ * Regras de negócio puras e imutáveis para os 3 módulos participativos:
+ * 1. Radar Urbano
  * 2. Agendamento Municipal
  * 3. Enquetes / Consulta Popular
  */
@@ -10,7 +10,7 @@ import {
   formatCpf,
   validateAppointmentInput,
   validatePollComment,
-  validatePotholeReport,
+  validateUrbanIssue,
 } from '../utils/validators.js';
 
 function getNextSequence(list, prefix) {
@@ -29,18 +29,19 @@ function getNextSequence(list, prefix) {
 }
 
 /**
- * Cria uma nova denúncia de buraco após validar os campos obrigatórios.
+ * Cria uma nova ocorrência no Radar Urbano após validar os campos obrigatórios.
  */
-export function createPotholeReport(existingList = [], input = {}) {
-  const validation = validatePotholeReport(input);
+export function createUrbanIssue(existingList = [], input = {}) {
+  const validation = validateUrbanIssue(input);
   if (!validation.valid) {
     return { ok: false, list: existingList, errors: validation.errors };
   }
 
-  const seq = getNextSequence(existingList, 'BUR');
+  const seq = getNextSequence(existingList, 'RAD');
   const item = {
-    id: `bur-${Date.now()}-${seq}`,
-    protocolo: generateProtocol('BUR', seq),
+    id: `rad-${Date.now()}-${seq}`,
+    protocolo: generateProtocol('RAD', seq),
+    categoria: String(input.categoria).trim(),
     titulo: String(input.titulo).trim(),
     endereco: String(input.endereco).trim(),
     bairro: String(input.bairro).trim(),
@@ -48,7 +49,7 @@ export function createPotholeReport(existingList = [], input = {}) {
     descricao: String(input.descricao).trim(),
     gravidade: input.gravidade,
     status: 'Aberto',
-    recorrencias: 1,
+    confirmacoes: 1,
     recorrente: Boolean(input.recorrente),
     criadoEm: new Date().toISOString(),
     confirmadoPeloUsuario: true,
@@ -62,41 +63,52 @@ export function createPotholeReport(existingList = [], input = {}) {
 }
 
 /**
- * Alterna a confirmação do cidadão em um buraco (+1 / -1 sem inflar o contador).
+ * Alterna o apoio do cidadão em uma ocorrência urbana (+1 / -1 sem duplicar).
  */
-export function togglePotholeConfirmation(list = [], potholeId) {
+export function toggleUrbanIssueSupport(list = [], issueId) {
   return list.map((item) => {
-    if (item.id !== potholeId) {
+    if (item.id !== issueId) {
       return item;
     }
     const nextConfirmed = !item.confirmadoPeloUsuario;
     const delta = nextConfirmed ? 1 : -1;
-    const nextCount = Math.max(0, (Number(item.recorrencias) || 0) + delta);
+    const nextCount = Math.max(0, (Number(item.confirmacoes) || 0) + delta);
     return {
       ...item,
       confirmadoPeloUsuario: nextConfirmed,
-      recorrencias: nextCount,
+      confirmacoes: nextCount,
       recorrente: item.recorrente || nextCount >= 3,
     };
   });
 }
 
 /**
- * Filtra ocorrências de buracos por status, bairro e busca textual sem acentos.
+ * Filtra ocorrências do Radar Urbano por categoria, status, bairro e busca textual sem acentos.
  */
-export function filterPotholes(list = [], filters = {}) {
+export function filterUrbanIssues(list = [], filters = {}) {
+  const categoriaFilter = normalizeSearchText(filters.categoria);
   const statusFilter = normalizeSearchText(filters.status);
   const bairroFilter = normalizeSearchText(filters.bairro);
   const query = normalizeSearchText(filters.q);
 
   return list.filter((item) => {
-    if (statusFilter && statusFilter !== 'todos') {
+    if (
+      categoriaFilter &&
+      categoriaFilter !== 'todas' &&
+      categoriaFilter !== 'todos'
+    ) {
+      if (normalizeSearchText(item.categoria) !== categoriaFilter) {
+        return false;
+      }
+    }
+
+    if (statusFilter && statusFilter !== 'todos' && statusFilter !== 'todas') {
       if (normalizeSearchText(item.status) !== statusFilter) {
         return false;
       }
     }
 
-    if (bairroFilter && bairroFilter !== 'todos') {
+    if (bairroFilter && bairroFilter !== 'todos' && bairroFilter !== 'todas') {
       if (normalizeSearchText(item.bairro) !== bairroFilter) {
         return false;
       }
@@ -104,7 +116,7 @@ export function filterPotholes(list = [], filters = {}) {
 
     if (query) {
       const searchable = normalizeSearchText(
-        `${item.protocolo} ${item.titulo} ${item.endereco} ${item.bairro} ${item.pontoReferencia || ''} ${item.descricao}`
+        `${item.protocolo} ${item.categoria || ''} ${item.titulo} ${item.endereco} ${item.bairro} ${item.pontoReferencia || ''} ${item.descricao}`
       );
       if (!searchable.includes(query)) {
         return false;

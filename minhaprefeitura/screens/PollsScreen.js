@@ -1,5 +1,12 @@
-import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import {
+  FlatList,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useApp } from '../context/AppContext';
 import ScreenHeader from '../components/ScreenHeader';
 import PollCard from '../components/PollCard';
@@ -12,34 +19,32 @@ const FILTERS = [
   'Encerradas',
 ];
 
-export default function PollsScreen() {
-  const { enquetes, votedPollIds, voteInPoll, commentOnPoll, goBack } = useApp();
+export default function PollsScreen({ navigation }) {
+  const { enquetes, votedPollIds, voteInPoll, commentOnPoll } = useApp();
   const [filter, setFilter] = useState('Todas');
 
   const activeCount = enquetes.filter((p) => p.status === 'ativa').length;
   const userVotesCount = Object.keys(votedPollIds).length;
 
-  const filteredPolls = useMemo(() => {
-    return enquetes.filter((poll) => {
-      if (filter === 'Prioridades de Bairros') {
-        return poll.categoria === 'Prioridade de Bairro';
-      }
-      if (filter === 'Projetos da Cidade') {
-        return poll.categoria === 'Projeto da Cidade';
-      }
-      if (filter === 'Encerradas') {
-        return poll.status === 'encerrada';
-      }
-      return true;
-    });
-  }, [enquetes, filter]);
+  const filteredPolls = enquetes.filter((poll) => {
+    if (filter === 'Prioridades de Bairros') {
+      return poll.categoria === 'Prioridade de Bairro';
+    }
+    if (filter === 'Projetos da Cidade') {
+      return poll.categoria === 'Projeto da Cidade';
+    }
+    if (filter === 'Encerradas') {
+      return poll.status === 'encerrada';
+    }
+    return true;
+  });
 
   return (
     <View style={styles.container}>
       <ScreenHeader
         title="Enquetes e Consulta Popular"
         subtitle="Participe das decisões da sua cidade"
-        onBack={goBack}
+        onBack={() => navigation.goBack()}
       />
 
       <View style={styles.summaryRow}>
@@ -78,12 +83,19 @@ export default function PollsScreen() {
         </ScrollView>
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        {filteredPolls.length === 0 ? (
+      <FlatList
+        data={filteredPolls}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={({ item }) => (
+          <PollCard
+            poll={item}
+            selectedOptionId={votedPollIds[item.id]}
+            onVote={voteInPoll}
+            onAddComment={commentOnPoll}
+          />
+        )}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListEmptyComponent={
           <EmptyState
             icon="bar-chart-outline"
             title="Nenhuma enquete nesta categoria"
@@ -91,20 +103,11 @@ export default function PollsScreen() {
             actionLabel="Ver todas"
             onAction={() => setFilter('Todas')}
           />
-        ) : (
-          <View style={styles.list}>
-            {filteredPolls.map((poll) => (
-              <PollCard
-                key={poll.id}
-                poll={poll}
-                selectedOptionId={votedPollIds[poll.id]}
-                onVote={voteInPoll}
-                onAddComment={commentOnPoll}
-              />
-            ))}
-          </View>
-        )}
-      </ScrollView>
+        }
+        style={styles.list}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      />
     </View>
   );
 }
@@ -167,14 +170,14 @@ const styles = StyleSheet.create({
   chipTextActive: {
     color: '#ffffff',
   },
-  scroll: {
+  list: {
     flex: 1,
   },
   content: {
     paddingHorizontal: 16,
     paddingBottom: 28,
   },
-  list: {
-    gap: 12,
+  separator: {
+    height: 12,
   },
 });

@@ -1,55 +1,68 @@
-import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import {
+  FlatList,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import ScreenHeader from '../components/ScreenHeader';
-import PotholeCard from '../components/PotholeCard';
-import PotholeReportModal from '../components/PotholeReportModal';
+import SearchBar from '../components/SearchBar';
+import UrbanIssueCard from '../components/UrbanIssueCard';
+import UrbanIssueModal from '../components/UrbanIssueModal';
 import EmptyState from '../components/EmptyState';
-import { filterPotholes } from '../utils/domainLogic.js';
+import { RADAR_CATEGORIES } from '../data/mockData.js';
+import { filterUrbanIssues } from '../utils/domainLogic.js';
+
+const CATEGORY_FILTERS = ['Todas', ...RADAR_CATEGORIES];
 
 const STATUS_FILTERS = [
   'Todos',
   'Aberto',
   'Em análise',
-  'Recapeamento agendado',
+  'Manutenção agendada',
   'Resolvido',
 ];
 
-export default function PotholeCuratorScreen() {
-  const { buracos, addPothole, toggleConfirmPothole, goBack } = useApp();
+export default function UrbanIssuesScreen({ navigation }) {
+  const { ocorrencias, addUrbanIssue, toggleSupportUrbanIssue } = useApp();
+  const [categoryFilter, setCategoryFilter] = useState('Todas');
   const [statusFilter, setStatusFilter] = useState('Todos');
   const [query, setQuery] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [lastCreated, setLastCreated] = useState(null);
 
-  const totalCount = buracos.length;
-  const recurrentCount = buracos.filter((b) => b.recorrente || b.recorrencias >= 3).length;
-  const resolvedCount = buracos.filter((b) => b.status === 'Resolvido').length;
+  const totalCount = ocorrencias.length;
+  const recurrentCount = ocorrencias.filter(
+    (item) => item.recorrente || Number(item.confirmacoes) >= 3
+  ).length;
+  const resolvedCount = ocorrencias.filter((item) => item.status === 'Resolvido').length;
 
-  const filteredList = useMemo(() => {
-    const matched = filterPotholes(buracos, { status: statusFilter, q: query });
-    return [...matched].sort((a, b) => {
-      if (b.recorrencias !== a.recorrencias) {
-        return b.recorrencias - a.recorrencias;
-      }
-      return String(b.criadoEm).localeCompare(String(a.criadoEm));
-    });
-  }, [buracos, statusFilter, query]);
+  const matched = filterUrbanIssues(ocorrencias, {
+    categoria: categoryFilter,
+    status: statusFilter,
+    q: query,
+  });
+
+  const filteredList = [...matched].sort((a, b) => {
+    if (b.confirmacoes !== a.confirmacoes) {
+      return b.confirmacoes - a.confirmacoes;
+    }
+    return String(b.criadoEm).localeCompare(String(a.criadoEm));
+  });
 
   return (
     <View style={styles.container}>
       <ScreenHeader
-        title="Curadoria de Buracos"
-        subtitle="Denuncie e confirme pontos críticos nas vias"
-        onBack={goBack}
+        title="Radar Urbano"
+        subtitle="Registre e apoie ocorrências urbanas na cidade"
+        onBack={() => navigation.goBack()}
       />
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={styles.topSection}>
         <View style={styles.kpiRow}>
           <View style={styles.kpiCard}>
             <Text style={styles.kpiValue}>{totalCount}</Text>
@@ -71,7 +84,7 @@ export default function PotholeCuratorScreen() {
           activeOpacity={0.85}
         >
           <Ionicons name="add-circle" size={20} color="#ffffff" />
-          <Text style={styles.reportCtaText}>Denunciar Novo Buraco</Text>
+          <Text style={styles.reportCtaText}>Registrar Nova Ocorrência</Text>
         </TouchableOpacity>
 
         {lastCreated ? (
@@ -79,10 +92,10 @@ export default function PotholeCuratorScreen() {
             <Ionicons name="checkmark-circle" size={20} color="#15803d" />
             <View style={styles.successInfo}>
               <Text style={styles.successTitle}>
-                Denúncia registrada • {lastCreated.protocolo}
+                Ocorrência registrada • {lastCreated.protocolo}
               </Text>
               <Text style={styles.successSubtitle}>
-                {lastCreated.endereco} ({lastCreated.bairro}) entrou na fila de curadoria.
+                {lastCreated.categoria} em {lastCreated.endereco} ({lastCreated.bairro}) entrou na fila.
               </Text>
             </View>
             <TouchableOpacity onPress={() => setLastCreated(null)}>
@@ -91,21 +104,32 @@ export default function PotholeCuratorScreen() {
           </View>
         ) : null}
 
-        <View style={styles.searchBox}>
-          <Ionicons name="search" size={17} color="#9ca3af" style={styles.searchIcon} />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Buscar por rua, bairro ou protocolo..."
-            placeholderTextColor="#9ca3af"
-            style={styles.searchInput}
-          />
-          {query.length > 0 ? (
-            <TouchableOpacity onPress={() => setQuery('')} style={styles.clearBtn}>
-              <Ionicons name="close-circle" size={18} color="#9ca3af" />
-            </TouchableOpacity>
-          ) : null}
-        </View>
+        <SearchBar
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Buscar por rua, bairro, categoria ou protocolo..."
+        />
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipsContent}
+        >
+          {CATEGORY_FILTERS.map((cat) => {
+            const active = categoryFilter === cat;
+            return (
+              <TouchableOpacity
+                key={cat}
+                style={[styles.chip, active && styles.chipCategoryActive]}
+                onPress={() => setCategoryFilter(cat)}
+              >
+                <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                  {cat}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
 
         <ScrollView
           horizontal
@@ -117,7 +141,7 @@ export default function PotholeCuratorScreen() {
             return (
               <TouchableOpacity
                 key={status}
-                style={[styles.chip, active && styles.chipActive]}
+                style={[styles.chip, active && styles.chipStatusActive]}
                 onPress={() => setStatusFilter(status)}
               >
                 <Text style={[styles.chipText, active && styles.chipTextActive]}>
@@ -127,37 +151,43 @@ export default function PotholeCuratorScreen() {
             );
           })}
         </ScrollView>
+      </View>
 
-        {filteredList.length === 0 ? (
+      <FlatList
+        data={filteredList}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={({ item }) => (
+          <UrbanIssueCard
+            item={item}
+            onToggleSupport={toggleSupportUrbanIssue}
+          />
+        )}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListEmptyComponent={
           <EmptyState
             title="Nenhuma ocorrência encontrada"
-            description="Ajuste os filtros ou registre um novo ponto crítico na sua rua."
+            description="Ajuste os filtros ou registre uma nova ocorrência urbana no seu bairro."
             actionLabel="Limpar filtros"
             onAction={() => {
+              setCategoryFilter('Todas');
               setStatusFilter('Todos');
               setQuery('');
             }}
           />
-        ) : (
-          <View style={styles.list}>
-            {filteredList.map((item) => (
-              <PotholeCard
-                key={item.id}
-                item={item}
-                onToggleConfirm={toggleConfirmPothole}
-              />
-            ))}
-          </View>
-        )}
-      </ScrollView>
+        }
+        style={styles.list}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+      />
 
-      <PotholeReportModal
+      <UrbanIssueModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        onSubmit={addPothole}
+        onSubmit={addUrbanIssue}
         onSuccess={(created) => {
           setModalVisible(false);
           setLastCreated(created);
+          setCategoryFilter('Todas');
           setStatusFilter('Todos');
           setQuery('');
         }}
@@ -171,13 +201,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f3f4f6',
   },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    padding: 16,
-    gap: 12,
-    paddingBottom: 28,
+  topSection: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    gap: 8,
   },
   kpiRow: {
     flexDirection: 'row',
@@ -187,26 +215,26 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#ffffff',
     borderRadius: 12,
-    paddingVertical: 12,
+    paddingVertical: 9,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#e5e7eb',
   },
   kpiValue: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#1d4ed8',
   },
   kpiLabel: {
     fontSize: 11,
     color: '#6b7280',
-    marginTop: 2,
+    marginTop: 1,
     fontWeight: '600',
   },
   reportCta: {
     backgroundColor: '#c2410c',
     borderRadius: 12,
-    paddingVertical: 13,
+    paddingVertical: 11,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -214,7 +242,7 @@ const styles = StyleSheet.create({
   },
   reportCtaText: {
     color: '#ffffff',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 'bold',
   },
   successBanner: {
@@ -222,7 +250,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#86efac',
     borderRadius: 12,
-    padding: 12,
+    padding: 10,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
@@ -240,31 +268,6 @@ const styles = StyleSheet.create({
     color: '#15803d',
     marginTop: 2,
   },
-  searchBox: {
-    position: 'relative',
-    justifyContent: 'center',
-  },
-  searchIcon: {
-    position: 'absolute',
-    left: 12,
-    zIndex: 1,
-  },
-  searchInput: {
-    backgroundColor: '#ffffff',
-    height: 40,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    paddingLeft: 36,
-    paddingRight: 36,
-    fontSize: 13,
-    color: '#1f2937',
-  },
-  clearBtn: {
-    position: 'absolute',
-    right: 10,
-    zIndex: 1,
-  },
   chipsContent: {
     gap: 8,
   },
@@ -273,10 +276,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#d1d5db',
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 5,
     borderRadius: 999,
   },
-  chipActive: {
+  chipCategoryActive: {
+    backgroundColor: '#c2410c',
+    borderColor: '#c2410c',
+  },
+  chipStatusActive: {
     backgroundColor: '#1d4ed8',
     borderColor: '#1d4ed8',
   },
@@ -289,6 +296,14 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   list: {
-    gap: 10,
+    flex: 1,
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    paddingBottom: 28,
+  },
+  separator: {
+    height: 10,
   },
 });

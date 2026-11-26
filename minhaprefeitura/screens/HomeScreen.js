@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
@@ -12,27 +12,28 @@ const SERVICE_SHORTCUTS = [
     key: 'coletaLixo',
     label: 'Coleta de Lixo',
     keywords: 'coleta lixo reciclagem seletiva bairro',
-    route: 'coletaLixo',
+    route: 'TrashCollection',
     bg: '#dcfce7',
     color: '#15803d',
     family: 'mci',
     icon: 'trash-can-outline',
   },
   {
-    key: 'buracos',
-    label: 'Curadoria de Buracos',
-    keywords: 'buracos asfalto rua via obra denuncia recorrencia',
-    route: 'buracos',
+    key: 'radarUrbano',
+    label: 'Radar Urbano',
+    keywords:
+      'radar urbano ocorrencia pavimentacao buraco asfalto iluminacao poste luz poda arvore drenagem bueiro alagamento limpeza entulho',
+    route: 'RadarUrbano',
     bg: '#ffedd5',
     color: '#c2410c',
     family: 'mci',
-    icon: 'road-variant',
+    icon: 'radar',
   },
   {
     key: 'agendamento',
     label: 'Agendamento',
     keywords: 'agendamento saude posto ubs documentos rg vacina',
-    route: 'agendamento',
+    route: 'Appointment',
     bg: '#dbeafe',
     color: '#1d4ed8',
     family: 'ion',
@@ -42,7 +43,7 @@ const SERVICE_SHORTCUTS = [
     key: 'enquetes',
     label: 'Enquetes',
     keywords: 'enquetes consulta popular votacao opiniao bairro projeto',
-    route: 'enquetes',
+    route: 'Polls',
     bg: '#ede9fe',
     color: '#6d28d9',
     family: 'ion',
@@ -50,37 +51,36 @@ const SERVICE_SHORTCUTS = [
   },
 ];
 
-export default function HomeScreen() {
+export default function HomeScreen({ navigation, onSwitchTab }) {
   const {
     tenant,
     noticias,
     notificacoes,
     searchQuery,
     setSearchQuery,
-    navigate,
-    switchTab,
   } = useApp();
 
   const normalizedQuery = normalizeSearchText(searchQuery);
 
-  const filteredServices = useMemo(() => {
-    if (!normalizedQuery) return SERVICE_SHORTCUTS;
-    return SERVICE_SHORTCUTS.filter((item) =>
-      normalizeSearchText(`${item.label} ${item.keywords}`).includes(normalizedQuery)
-    );
-  }, [normalizedQuery]);
+  const filteredServices = normalizedQuery
+    ? SERVICE_SHORTCUTS.filter((item) =>
+        normalizeSearchText(`${item.label} ${item.keywords}`).includes(normalizedQuery)
+      )
+    : SERVICE_SHORTCUTS;
 
-  const filteredNews = useMemo(() => {
-    if (!normalizedQuery) return noticias.slice(0, 4);
-    return noticias.filter((item) =>
-      normalizeSearchText(
-        `${item.titulo} ${item.resumo} ${item.categoria} ${stripHtml(item.conteudo)}`
-      ).includes(normalizedQuery)
-    );
-  }, [noticias, normalizedQuery]);
+  const filteredNews = normalizedQuery
+    ? noticias.filter((item) =>
+        normalizeSearchText(
+          `${item.titulo} ${item.resumo} ${item.categoria} ${stripHtml(item.conteudo)}`
+        ).includes(normalizedQuery)
+      )
+    : noticias.slice(0, 4);
 
   const featuredAlert = notificacoes[0];
-  const noMatches = normalizedQuery.length > 0 && filteredServices.length === 0 && filteredNews.length === 0;
+  const noMatches =
+    normalizedQuery.length > 0 &&
+    filteredServices.length === 0 &&
+    filteredNews.length === 0;
 
   return (
     <ScrollView
@@ -91,7 +91,7 @@ export default function HomeScreen() {
       <Header
         cityName={tenant?.nome}
         unreadCount={notificacoes.length}
-        onPressNotifications={() => navigate('notificacoes')}
+        onPressNotifications={() => navigation.navigate('Notifications')}
         searchValue={searchQuery}
         onChangeSearch={setSearchQuery}
       />
@@ -100,7 +100,7 @@ export default function HomeScreen() {
         <View style={styles.sectionContainer}>
           <TouchableOpacity
             style={styles.alertCard}
-            onPress={() => navigate('notificacoes')}
+            onPress={() => navigation.navigate('Notifications')}
             activeOpacity={0.85}
           >
             <Ionicons name="warning" size={22} color="#d97706" style={styles.alertIcon} />
@@ -130,7 +130,7 @@ export default function HomeScreen() {
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Serviços e Utilidades</Text>
-            <TouchableOpacity onPress={() => switchTab('servicos')}>
+            <TouchableOpacity onPress={() => onSwitchTab && onSwitchTab('servicos')}>
               <Text style={styles.sectionAction}>Ver todos</Text>
             </TouchableOpacity>
           </View>
@@ -140,7 +140,7 @@ export default function HomeScreen() {
               <TouchableOpacity
                 key={service.key}
                 style={styles.utilityItem}
-                onPress={() => navigate(service.route)}
+                onPress={() => navigation.navigate(service.route)}
                 activeOpacity={0.8}
               >
                 <View style={[styles.utilityIconBox, { backgroundColor: service.bg }]}>
@@ -169,7 +169,7 @@ export default function HomeScreen() {
             <Text style={styles.sectionTitle}>
               {normalizedQuery ? 'Notícias encontradas' : 'Últimas Notícias'}
             </Text>
-            <TouchableOpacity onPress={() => switchTab('noticias')}>
+            <TouchableOpacity onPress={() => onSwitchTab && onSwitchTab('noticias')}>
               <Text style={styles.sectionAction}>Ver mais</Text>
             </TouchableOpacity>
           </View>
@@ -179,7 +179,7 @@ export default function HomeScreen() {
               <NewsCard
                 key={item.id}
                 item={item}
-                onPress={() => navigate('newsDetail', { slug: item.slug })}
+                onPress={() => navigation.navigate('NewsDetail', { slug: item.slug })}
               />
             ))}
           </View>

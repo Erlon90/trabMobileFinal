@@ -1,7 +1,15 @@
-import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import {
+  FlatList,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
+import SearchBar from '../components/SearchBar';
 import NewsCard from '../components/NewsCard';
 import EmptyState from '../components/EmptyState';
 import { normalizeSearchText, stripHtml } from '../utils/formatters.js';
@@ -16,31 +24,29 @@ const CATEGORIES = [
   'Cultura',
 ];
 
-export default function NewsListScreen() {
-  const { noticias, searchQuery, setSearchQuery, navigate } = useApp();
+export default function NewsListScreen({ navigation }) {
+  const { noticias, searchQuery, setSearchQuery } = useApp();
   const [selectedCategory, setSelectedCategory] = useState('Todas');
 
-  const filteredNews = useMemo(() => {
-    const query = normalizeSearchText(searchQuery);
-    const categoryNorm = normalizeSearchText(selectedCategory);
+  const query = normalizeSearchText(searchQuery);
+  const categoryNorm = normalizeSearchText(selectedCategory);
 
-    return noticias.filter((item) => {
-      if (categoryNorm !== 'todas' && normalizeSearchText(item.categoria) !== categoryNorm) {
-        return false;
-      }
-      if (!query) return true;
-      const searchable = normalizeSearchText(
-        `${item.titulo} ${item.resumo} ${item.categoria} ${stripHtml(item.conteudo)}`
-      );
-      return searchable.includes(query);
-    });
-  }, [noticias, searchQuery, selectedCategory]);
+  const filteredNews = noticias.filter((item) => {
+    if (categoryNorm !== 'todas' && normalizeSearchText(item.categoria) !== categoryNorm) {
+      return false;
+    }
+    if (!query) return true;
+    const searchable = normalizeSearchText(
+      `${item.titulo} ${item.resumo} ${item.categoria} ${stripHtml(item.conteudo)}`
+    );
+    return searchable.includes(query);
+  });
 
   return (
     <View style={styles.container}>
       <View style={styles.topHeader}>
         <View style={styles.topRow}>
-          <View>
+          <View style={styles.headerTextCol}>
             <Text style={styles.headerTitle}>Notícias Municipais</Text>
             <Text style={styles.headerSubtitle}>
               Fique por dentro das ações e comunicados oficiais
@@ -48,27 +54,18 @@ export default function NewsListScreen() {
           </View>
           <TouchableOpacity
             style={styles.bellBtn}
-            onPress={() => navigate('notificacoes')}
+            onPress={() => navigation.navigate('Notifications')}
+            accessibilityLabel="Abrir avisos e notificações"
           >
             <Ionicons name="notifications-outline" size={20} color="#ffffff" />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={18} color="#9ca3af" style={styles.searchIcon} />
-          <TextInput
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Filtrar notícias por assunto..."
-            placeholderTextColor="#9ca3af"
-            style={styles.searchInput}
-          />
-          {searchQuery.length > 0 ? (
-            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearBtn}>
-              <Ionicons name="close-circle" size={18} color="#9ca3af" />
-            </TouchableOpacity>
-          ) : null}
-        </View>
+        <SearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Filtrar notícias por assunto..."
+        />
       </View>
 
       <View style={styles.chipsWrapper}>
@@ -95,17 +92,23 @@ export default function NewsListScreen() {
         </ScrollView>
       </View>
 
-      <ScrollView
-        style={styles.listScroll}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <Text style={styles.countLabel}>
-          {filteredNews.length}{' '}
-          {filteredNews.length === 1 ? 'publicação encontrada' : 'publicações encontradas'}
-        </Text>
+      <Text style={styles.countLabel}>
+        {filteredNews.length}{' '}
+        {filteredNews.length === 1 ? 'publicação encontrada' : 'publicações encontradas'}
+      </Text>
 
-        {filteredNews.length === 0 ? (
+      <FlatList
+        data={filteredNews}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={({ item }) => (
+          <NewsCard
+            item={item}
+            showSummary
+            onPress={() => navigation.navigate('NewsDetail', { slug: item.slug })}
+          />
+        )}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListEmptyComponent={
           <EmptyState
             title="Nenhuma notícia encontrada"
             description="Altere a categoria selecionada ou limpe o termo de busca."
@@ -115,19 +118,11 @@ export default function NewsListScreen() {
               setSearchQuery('');
             }}
           />
-        ) : (
-          <View style={styles.newsList}>
-            {filteredNews.map((item) => (
-              <NewsCard
-                key={item.id}
-                item={item}
-                showSummary
-                onPress={() => navigate('newsDetail', { slug: item.slug })}
-              />
-            ))}
-          </View>
-        )}
-      </ScrollView>
+        }
+        style={styles.list}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+      />
     </View>
   );
 }
@@ -151,6 +146,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
+  headerTextCol: {
+    flex: 1,
+    marginRight: 10,
+  },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -168,29 +167,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.16)',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  searchContainer: {
-    position: 'relative',
-    justifyContent: 'center',
-  },
-  searchIcon: {
-    position: 'absolute',
-    left: 12,
-    zIndex: 1,
-  },
-  searchInput: {
-    backgroundColor: '#ffffff',
-    height: 40,
-    borderRadius: 10,
-    paddingLeft: 38,
-    paddingRight: 36,
-    fontSize: 13,
-    color: '#1f2937',
-  },
-  clearBtn: {
-    position: 'absolute',
-    right: 10,
-    zIndex: 1,
   },
   chipsWrapper: {
     paddingVertical: 10,
@@ -219,20 +195,21 @@ const styles = StyleSheet.create({
   chipTextActive: {
     color: '#ffffff',
   },
-  listScroll: {
+  countLabel: {
+    fontSize: 11,
+    color: '#6b7280',
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    fontWeight: '600',
+  },
+  list: {
     flex: 1,
   },
   listContent: {
     paddingHorizontal: 16,
     paddingBottom: 24,
   },
-  countLabel: {
-    fontSize: 11,
-    color: '#6b7280',
-    marginBottom: 10,
-    fontWeight: '600',
-  },
-  newsList: {
-    gap: 10,
+  separator: {
+    height: 10,
   },
 });

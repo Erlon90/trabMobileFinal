@@ -4,17 +4,16 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { API_CONFIG } from '../services/api.js';
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ navigation }) {
   const {
     tenant,
-    buracos,
+    ocorrencias,
     agendamentos,
     votedPollIds,
-    reportedPotholeIds,
-    navigate,
+    reportedIssueIds,
   } = useApp();
 
-  const confirmedPotholesCount = buracos.filter((b) => b.confirmadoPeloUsuario).length;
+  const supportedIssuesCount = ocorrencias.filter((o) => o.confirmadoPeloUsuario).length;
   const activeAppointmentsCount = agendamentos.filter((a) => a.status === 'Confirmado').length;
   const votedPollsCount = Object.keys(votedPollIds).length;
 
@@ -42,20 +41,20 @@ export default function ProfileScreen() {
         <View style={styles.statsRow}>
           <TouchableOpacity
             style={styles.statCard}
-            onPress={() => navigate('buracos')}
+            onPress={() => navigation.navigate('RadarUrbano')}
             activeOpacity={0.85}
           >
-            <MaterialCommunityIcons name="road-variant" size={22} color="#c2410c" />
-            <Text style={styles.statNumber}>{confirmedPotholesCount}</Text>
-            <Text style={styles.statLabel}>Buracos confirmados</Text>
-            {reportedPotholeIds.length > 0 ? (
-              <Text style={styles.statSub}>+{reportedPotholeIds.length} novos</Text>
+            <MaterialCommunityIcons name="radar" size={22} color="#c2410c" />
+            <Text style={styles.statNumber}>{supportedIssuesCount}</Text>
+            <Text style={styles.statLabel}>Ocorrências apoiadas</Text>
+            {reportedIssueIds.length > 0 ? (
+              <Text style={styles.statSub}>+{reportedIssueIds.length} novas</Text>
             ) : null}
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.statCard}
-            onPress={() => navigate('agendamento')}
+            onPress={() => navigation.navigate('Appointment')}
             activeOpacity={0.85}
           >
             <Ionicons name="calendar" size={22} color="#1d4ed8" />
@@ -65,7 +64,7 @@ export default function ProfileScreen() {
 
           <TouchableOpacity
             style={styles.statCard}
-            onPress={() => navigate('enquetes')}
+            onPress={() => navigation.navigate('Polls')}
             activeOpacity={0.85}
           >
             <Ionicons name="bar-chart" size={22} color="#6d28d9" />
@@ -81,7 +80,7 @@ export default function ProfileScreen() {
         <View style={styles.menuCard}>
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => navigate('notificacoes')}
+            onPress={() => navigation.navigate('Notifications')}
           >
             <Ionicons name="notifications-outline" size={20} color="#1d4ed8" />
             <Text style={styles.menuLabel}>Central de Avisos e Alertas</Text>
@@ -92,10 +91,10 @@ export default function ProfileScreen() {
 
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => navigate('buracos')}
+            onPress={() => navigation.navigate('RadarUrbano')}
           >
-            <MaterialCommunityIcons name="road-variant" size={20} color="#c2410c" />
-            <Text style={styles.menuLabel}>Minhas Denúncias na Curadoria</Text>
+            <MaterialCommunityIcons name="radar" size={20} color="#c2410c" />
+            <Text style={styles.menuLabel}>Minhas Ocorrências no Radar Urbano</Text>
             <Ionicons name="chevron-forward" size={18} color="#9ca3af" />
           </TouchableOpacity>
 
@@ -103,7 +102,7 @@ export default function ProfileScreen() {
 
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => navigate('agendamento')}
+            onPress={() => navigation.navigate('Appointment')}
           >
             <Ionicons name="calendar-outline" size={20} color="#1d4ed8" />
             <Text style={styles.menuLabel}>Gerenciar Meus Agendamentos</Text>
@@ -114,7 +113,7 @@ export default function ProfileScreen() {
 
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => navigate('enquetes')}
+            onPress={() => navigation.navigate('Polls')}
           >
             <Ionicons name="bar-chart-outline" size={20} color="#6d28d9" />
             <Text style={styles.menuLabel}>Consultas Populares em Aberto</Text>

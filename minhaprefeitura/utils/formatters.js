@@ -125,7 +125,7 @@ export function formatRelativeTime(isoString, now = new Date()) {
 }
 
 /**
- * Gera protocolo padronizado (ex: `BUR-2026-0007`, `AGD-2026-0003`).
+ * Gera protocolo padronizado (ex: `RAD-2026-0007`, `AGD-2026-0003`).
  * @param {string} prefix
  * @param {number} sequence
  * @param {number} [year]

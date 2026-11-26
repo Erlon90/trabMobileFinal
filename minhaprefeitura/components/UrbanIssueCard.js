@@ -4,10 +4,10 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import StatusBadge from './StatusBadge';
 import { formatDatePtBr } from '../utils/formatters.js';
 
-export default function PotholeCard({ item, onToggleConfirm }) {
-  const isRecurrent = item.recorrente || item.recorrencias >= 3;
+export default function UrbanIssueCard({ item, onToggleSupport }) {
+  const isRecurrent = Boolean(item.recorrente) || Number(item.confirmacoes) >= 3;
   const isResolved = item.status === 'Resolvido';
-  const confirmed = Boolean(item.confirmadoPeloUsuario);
+  const supported = Boolean(item.confirmadoPeloUsuario);
 
   return (
     <View style={styles.card}>
@@ -17,8 +17,13 @@ export default function PotholeCard({ item, onToggleConfirm }) {
       </View>
 
       <View style={styles.badgesRow}>
+        {item.categoria ? <StatusBadge label={item.categoria} /> : null}
         <StatusBadge label={item.status} />
-        <StatusBadge label={`Gravidade: ${item.gravidade}`} bgColor="#f3f4f6" textColor="#374151" />
+        <StatusBadge
+          label={`Gravidade: ${item.gravidade}`}
+          bgColor="#f3f4f6"
+          textColor="#374151"
+        />
         {isRecurrent ? <StatusBadge label="Recorrente" /> : null}
       </View>
 
@@ -41,29 +46,29 @@ export default function PotholeCard({ item, onToggleConfirm }) {
         <View style={styles.countInfo}>
           <MaterialCommunityIcons name="account-group-outline" size={16} color="#4b5563" />
           <Text style={styles.countText}>
-            {item.recorrencias}{' '}
-            {item.recorrencias === 1 ? 'confirmação' : 'confirmações'}
+            {item.confirmacoes}{' '}
+            {item.confirmacoes === 1 ? 'confirmação' : 'confirmações'}
           </Text>
         </View>
 
         {isResolved ? (
           <View style={styles.resolvedTag}>
             <Ionicons name="checkmark-circle" size={15} color="#15803d" />
-            <Text style={styles.resolvedText}>Via recuperada</Text>
+            <Text style={styles.resolvedText}>Demanda concluída</Text>
           </View>
         ) : (
           <TouchableOpacity
-            style={[styles.confirmBtn, confirmed && styles.confirmBtnActive]}
-            onPress={() => onToggleConfirm(item.id)}
+            style={[styles.supportBtn, supported && styles.supportBtnActive]}
+            onPress={() => onToggleSupport(item.id)}
             activeOpacity={0.8}
           >
             <Ionicons
-              name={confirmed ? 'checkmark-circle' : 'add-circle-outline'}
+              name={supported ? 'checkmark-circle' : 'add-circle-outline'}
               size={16}
-              color={confirmed ? '#ffffff' : '#c2410c'}
+              color={supported ? '#ffffff' : '#c2410c'}
             />
-            <Text style={[styles.confirmBtnText, confirmed && styles.confirmBtnTextActive]}>
-              {confirmed ? 'Recorrência confirmada' : 'Confirmar buraco'}
+            <Text style={[styles.supportBtnText, supported && styles.supportBtnTextActive]}>
+              {supported ? 'Ocorrência apoiada' : 'Apoiar ocorrência'}
             </Text>
           </TouchableOpacity>
         )}
@@ -151,7 +156,7 @@ const styles = StyleSheet.create({
     color: '#4b5563',
     marginLeft: 5,
   },
-  confirmBtn: {
+  supportBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff7ed',
@@ -162,16 +167,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     gap: 5,
   },
-  confirmBtnActive: {
+  supportBtnActive: {
     backgroundColor: '#c2410c',
     borderColor: '#c2410c',
   },
-  confirmBtnText: {
+  supportBtnText: {
     fontSize: 12,
     fontWeight: 'bold',
     color: '#c2410c',
   },
-  confirmBtnTextActive: {
+  supportBtnTextActive: {
     color: '#ffffff',
   },
   resolvedTag: {

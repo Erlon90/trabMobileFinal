@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
+import SearchBar from './SearchBar';
 
 export default function Header({
   cityName,
@@ -45,27 +46,11 @@ export default function Header({
         </TouchableOpacity>
       </View>
 
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={18} color="#9ca3af" style={styles.searchIcon} />
-        <TextInput
-          value={searchValue}
-          onChangeText={onChangeSearch}
-          placeholder={placeholder}
-          placeholderTextColor="#9ca3af"
-          style={styles.searchInput}
-          returnKeyType="search"
-          autoCorrect={false}
-        />
-        {searchValue.length > 0 ? (
-          <TouchableOpacity
-            onPress={() => onChangeSearch && onChangeSearch('')}
-            style={styles.clearBtn}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons name="close-circle" size={18} color="#9ca3af" />
-          </TouchableOpacity>
-        ) : null}
-      </View>
+      <SearchBar
+        value={searchValue}
+        onChangeText={onChangeSearch}
+        placeholder={placeholder}
+      />
     </View>
   );
 }
@@ -151,28 +136,5 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 9,
     fontWeight: 'bold',
-  },
-  searchContainer: {
-    position: 'relative',
-    justifyContent: 'center',
-  },
-  searchIcon: {
-    position: 'absolute',
-    left: 12,
-    zIndex: 1,
-  },
-  searchInput: {
-    backgroundColor: '#ffffff',
-    height: 42,
-    borderRadius: 10,
-    paddingLeft: 38,
-    paddingRight: 36,
-    fontSize: 13,
-    color: '#1f2937',
-  },
-  clearBtn: {
-    position: 'absolute',
-    right: 10,
-    zIndex: 1,
   },
 });

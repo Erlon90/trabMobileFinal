@@ -7,24 +7,27 @@ import StatusBadge from '../components/StatusBadge';
 import EmptyState from '../components/EmptyState';
 import { formatDatePtBr, formatRelativeTime, stripHtml } from '../utils/formatters.js';
 
-export default function NewsDetailScreen({ routeParams }) {
-  const { noticias, tenant, goBack } = useApp();
+export default function NewsDetailScreen({ route, navigation }) {
+  const { noticias, tenant } = useApp();
   const [imageFailed, setImageFailed] = useState(false);
 
-  const slug = routeParams?.slug;
+  const slug = route?.params?.slug;
   const noticia = noticias.find((item) => item.slug === slug);
 
   if (!noticia) {
     return (
       <View style={styles.container}>
-        <ScreenHeader title="Detalhes da Notícia" onBack={goBack} />
+        <ScreenHeader
+          title="Detalhes da Notícia"
+          onBack={() => navigation.goBack()}
+        />
         <View style={styles.bodyPadding}>
           <EmptyState
             icon="alert-circle-outline"
             title="Notícia não encontrada"
             description="O conteúdo selecionado não está mais disponível."
             actionLabel="Voltar"
-            onAction={goBack}
+            onAction={() => navigation.goBack()}
           />
         </View>
       </View>
@@ -39,7 +42,7 @@ export default function NewsDetailScreen({ routeParams }) {
       <ScreenHeader
         title="Detalhes da Notícia"
         subtitle={noticia.categoria || 'Comunicado Oficial'}
-        onBack={goBack}
+        onBack={() => navigation.goBack()}
       />
 
       <ScrollView

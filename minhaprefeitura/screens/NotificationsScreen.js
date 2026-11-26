@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import ScreenHeader from '../components/ScreenHeader';
@@ -37,72 +37,74 @@ const TYPE_STYLES = {
   },
 };
 
-export default function NotificationsScreen() {
-  const { notificacoes, navigate, goBack } = useApp();
+export default function NotificationsScreen({ navigation }) {
+  const { notificacoes } = useApp();
+
+  function renderNotification({ item }) {
+    const tone = TYPE_STYLES[item.tipo] || TYPE_STYLES.utilidade_publica;
+    return (
+      <View
+        style={[
+          styles.card,
+          { backgroundColor: tone.bg, borderLeftColor: tone.border },
+        ]}
+      >
+        <View style={styles.cardHeader}>
+          <View style={styles.typeRow}>
+            <Ionicons name={tone.icon} size={18} color={tone.border} />
+            <Text style={[styles.typeLabel, { color: tone.titleColor }]}>
+              {tone.label.toUpperCase()}
+            </Text>
+          </View>
+          <Text style={styles.timeText}>{formatRelativeTime(item.enviado_em)}</Text>
+        </View>
+
+        <Text style={styles.cardTitle}>{item.titulo}</Text>
+        <Text style={styles.cardMessage}>{item.mensagem}</Text>
+
+        <View style={styles.cardFooter}>
+          <Text style={styles.expireText}>
+            Válido até {formatDatePtBr(item.expira_em)}
+          </Text>
+
+          {item.link_acao ? (
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: tone.border }]}
+              onPress={() => navigation.navigate(item.link_acao)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.actionBtnText}>Abrir módulo →</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <ScreenHeader
         title="Avisos e Comunicados"
         subtitle={`${notificacoes.length} comunicados oficiais ativos`}
-        onBack={goBack}
+        onBack={() => navigation.goBack()}
       />
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        {notificacoes.length === 0 ? (
+      <FlatList
+        data={notificacoes}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={renderNotification}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListEmptyComponent={
           <EmptyState
             icon="notifications-off-outline"
             title="Nenhum aviso ativo no momento"
             description="Quando a administração publicar novos alertas, eles aparecerão aqui."
           />
-        ) : (
-          notificacoes.map((item) => {
-            const tone = TYPE_STYLES[item.tipo] || TYPE_STYLES.utilidade_publica;
-            return (
-              <View
-                key={item.id}
-                style={[
-                  styles.card,
-                  { backgroundColor: tone.bg, borderLeftColor: tone.border },
-                ]}
-              >
-                <View style={styles.cardHeader}>
-                  <View style={styles.typeRow}>
-                    <Ionicons name={tone.icon} size={18} color={tone.border} />
-                    <Text style={[styles.typeLabel, { color: tone.titleColor }]}>
-                      {tone.label.toUpperCase()}
-                    </Text>
-                  </View>
-                  <Text style={styles.timeText}>{formatRelativeTime(item.enviado_em)}</Text>
-                </View>
-
-                <Text style={styles.cardTitle}>{item.titulo}</Text>
-                <Text style={styles.cardMessage}>{item.mensagem}</Text>
-
-                <View style={styles.cardFooter}>
-                  <Text style={styles.expireText}>
-                    Válido até {formatDatePtBr(item.expira_em)}
-                  </Text>
-
-                  {item.link_acao ? (
-                    <TouchableOpacity
-                      style={[styles.actionBtn, { backgroundColor: tone.border }]}
-                      onPress={() => navigate(item.link_acao)}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={styles.actionBtnText}>Abrir módulo →</Text>
-                    </TouchableOpacity>
-                  ) : null}
-                </View>
-              </View>
-            );
-          })
-        )}
-      </ScrollView>
+        }
+        style={styles.list}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      />
     </View>
   );
 }
@@ -112,13 +114,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f3f4f6',
   },
-  scroll: {
+  list: {
     flex: 1,
   },
   content: {
     padding: 16,
-    gap: 12,
     paddingBottom: 28,
+  },
+  separator: {
+    height: 12,
   },
   card: {
     borderRadius: 12,
